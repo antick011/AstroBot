@@ -1,216 +1,245 @@
 const chatArea = document.getElementById("chat-area");
-const inputArea = document.getElementById("input-area");
+const userInput = document.getElementById("user-input");
+const sendBtn = document.getElementById("send-btn");
+const progressFill = document.getElementById("progress-fill");
 
-let userSelections = {
-  fateLine: null,
-  heartLine: null,
-  lifeLine: null,
-  mindLine: null,
-  marriageLine: null,
-  signs: []
+let stage = 0;
+let userData = {
+  name: "",
+  dob: "",
+  birthTime: "",
+  address: "",
+  palm: {},
+  signs: {},
+  zodiac: {}
 };
 
-function botReply(msg) {
-  const msgDiv = document.createElement("div");
-  msgDiv.className = "bot-msg";
-  msgDiv.innerText = msg;
-  chatArea.appendChild(msgDiv);
+const palmQuestions = [
+  {
+    key: "fateLine",
+    question: "What type of Fate Line do you have?",
+    options: ["Present", "Broken", "Absent"],
+    images: ["images/fate_present.jpg", "images/fate_broken.jpg", "images/fate_absent.jpg"]
+  },
+  {
+    key: "heartLine",
+    question: "Where does your Heart Line point?",
+    options: ["Index Finger", "Middle Finger", "Both Fingers"],
+    images: ["images/heart_index.jpg", "images/heart_middle.jpg", "images/heart_both.jpg"]
+  },
+  {
+    key: "lifeLine",
+    question: "What type of Life Line do you have?",
+    options: ["Long", "Short", "Broken"],
+    images: ["images/life_long.jpg", "images/life_short.jpg", "images/life_broken.jpg"]
+  },
+  {
+    key: "mindLine",
+    question: "What type of Mind Line do you have?",
+    options: ["Straight", "Short", "Curved"],
+    images: ["images/mind_straight.jpg", "images/mind_short.jpg", "images/mind_curve.jpg"]
+  },
+  {
+    key: "marriageLine",
+    question: "Where is your Marriage Line located?",
+    options: ["Bottom", "Middle", "Top"],
+    images: ["images/marriage_bottom.jpg", "images/marriage_middle.jpg", "images/marriage_top.jpg"]
+  }
+];
+
+const signQuestions = [
+  { key: "crossSign", question: "Do you have a cross between heart and mind lines?", image: "images/sign_cross.jpg" },
+  { key: "parallelLifeLine", question: "Do you see a parallel line beside your Life Line?", image: "images/sign_parallel.jpg" },
+  { key: "abroadMark", question: "Do you see a long mark from the left edge to your Fate Line?", image: "images/sign_abroad.jpg" },
+  { key: "secondHeartLine", question: "Do you have a second Heart Line curved above the original?", image: "images/sign_secondHeart.jpg" }
+];
+
+const zodiacData = [
+  { sign: "Aries", symbol: "♈", start: "03-21", end: "04-19", numbers: [1, 9, 17, 22], prediction: "In the coming weeks, your natural drive and leadership will open new doors — but impatience may test your patience in relationships. Pause before you push. A bold idea could take shape if you stay focused." },
+  { sign: "Taurus", symbol: "♉", start: "04-20", end: "05-20", numbers: [2, 6, 9, 12], prediction: " A period of financial or emotional stability is approaching, but only if you're willing to release old stubborn ways. A long-term reward awaits if you choose growth over comfort." },
+  { sign: "Gemini", symbol: "♊", start: "05-21", end: "06-20", numbers: [5, 7, 14, 23], prediction: "Conversations and social interactions will spark unexpected opportunities. Stay flexible — your dual nature will help you juggle choices. But beware of spreading yourself too thin." },
+  { sign: "Cancer", symbol: "♋", start: "06-21", end: "07-22", numbers: [2, 7, 11, 16], prediction: "Emotions will run deep this month — don’t fight them. A family or home-related matter may need your nurturing touch. Guard your heart, but don’t isolate yourself from those who care." },
+  { sign: "Leo", symbol: "♌", start: "07-23", end: "08-22", numbers: [1, 3, 10, 19], prediction: "Recognition and admiration are heading your way — but remember, true strength lies in humility. A creative project or personal spotlight moment may shape your future path dramatically." },
+  { sign: "Virgo", symbol: "♍", start: "08-23", end: "09-22", numbers: [5, 14, 15, 23], prediction: "Your attention to detail will save the day in an upcoming task. However, don't let perfectionism paralyze progress. A small act of kindness or service will return to you tenfold." },
+  { sign: "Libra", symbol: "♎", start: "09-23", end: "10-22", numbers: [6, 9, 15, 24], prediction: "A decision you've been avoiding must be faced. Harmony will return once you speak your truth. A relationship may evolve — or dissolve — based on how honest you are with your heart." },
+  { sign: "Scorpio", symbol: "♏", start: "10-23", end: "11-21", numbers: [4, 8, 11, 18], prediction: "Secrets may come to light — both yours and others’. How you handle this moment will define a bond. Intuition will guide you toward a powerful transformation, possibly in love or career." },
+  { sign: "Sagittarius", symbol: "♐", start: "11-22", end: "12-21", numbers: [3, 7, 9, 21], prediction: "You’ll soon be offered a journey — literal or mental — that expands your worldview. Be cautious with blunt honesty; not everyone is ready for your truth. Luck favors you if you embrace change without arrogance." },
+  { sign: "Capricorn", symbol: "♑", start: "12-22", end: "01-19", numbers: [4, 8, 13, 22], prediction: "A career milestone or major responsibility is around the corner. Your discipline will lead to success, but don’t forget to nurture your personal life. A surprise emotional connection may surface." },
+  { sign: "Aquarius", symbol: "♒", start: "01-20", end: "02-18", numbers: [4, 7, 11, 22], prediction: "A sudden innovation or creative idea will set you apart. Your individuality will attract both admiration and criticism — embrace both. A humanitarian cause may unexpectedly become your passion." },
+  { sign: "Pisces", symbol: "♓", start: "02-19", end: "03-20", numbers: [3, 7, 12, 19], prediction: "Dreams and reality will blur — but inside your imagination lies the seed of something beautiful. Avoid escapism. A moment of spiritual clarity or emotional breakthrough is on the horizon." }
+];
+
+function getZodiacSign(dob) {
+  const [day, month, year] = dob.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+  for (let z of zodiacData) {
+    const [sMonth, sDay] = z.start.split("-").map(Number);
+    const [eMonth, eDay] = z.end.split("-").map(Number);
+    const start = new Date(year, sMonth - 1, sDay);
+    const end = new Date(year, eMonth - 1, eDay);
+
+    if (start <= end) {
+      if (date >= start && date <= end) return z;
+    } else {
+      // Capricorn range
+      if (date >= start || date <= end) return z;
+    }
+  }
+  return null;
+}
+
+function appendMessage(text, sender = "bot") {
+  const msg = document.createElement("div");
+  msg.classList.add(sender === "bot" ? "bot-msg" : "user-msg");
+  msg.textContent = text;
+  chatArea.appendChild(msg);
   chatArea.scrollTop = chatArea.scrollHeight;
 }
 
-function userReply(msg) {
-  const msgDiv = document.createElement("div");
-  msgDiv.className = "user-msg";
-  msgDiv.innerText = msg;
-  chatArea.appendChild(msgDiv);
-  chatArea.scrollTop = chatArea.scrollHeight;
-}
-
-function showOptions(options, multiple = false) {
+function appendOptions(options, images = []) {
   const container = document.createElement("div");
   container.className = "options-container";
-
-  options.forEach(opt => {
+  options.forEach((option, index) => {
     const btn = document.createElement("div");
     btn.className = "option-btn";
-    btn.innerHTML = `
-      <img src="${opt.img}" alt="${opt.label}" />
-      <span>${opt.label}</span>
-    `;
-    btn.addEventListener("click", () => {
-      if (!multiple) {
-        userReply(opt.label);
-        container.remove();
-        proceed(opt.label);
-      } else {
-        btn.classList.toggle("selected");
-      }
-    });
+    if (images[index]) {
+      const img = document.createElement("img");
+      img.src = images[index];
+      btn.appendChild(img);
+    }
+    const label = document.createElement("span");
+    label.textContent = option;
+    btn.appendChild(label);
+    btn.onclick = () => handleAnswer(option);
     container.appendChild(btn);
   });
-
-  if (multiple) {
-    const doneBtn = document.createElement("button");
-    doneBtn.innerText = "Done";
-    doneBtn.className = "done-btn";
-    doneBtn.addEventListener("click", () => {
-      const selected = Array.from(container.querySelectorAll(".selected span")).map(s => s.innerText);
-      userReply(selected.join(", "));
-      container.remove();
-      proceed(selected);
-    });
-    container.appendChild(doneBtn);
-  }
-
   chatArea.appendChild(container);
   chatArea.scrollTop = chatArea.scrollHeight;
 }
 
-let step = 0;
-
-function startBot() {
-  botReply("👋 Hello! I’m AstroBot — your palm reading assistant.");
-  setTimeout(() => {
-    botReply("Let’s read your palm based on some images. Please choose what matches your hand.");
-    setTimeout(() => {
-      askFateLine();
-    }, 1200);
-  }, 1200);
+function askInputField(label) {
+  appendMessage(label);
+  userInput.disabled = false;
+  sendBtn.disabled = userInput.value.trim() === "";
+  userInput.focus();
 }
 
-function askFateLine() {
-  botReply("👉 Select your *Fate Line* type:");
-  showOptions([
-    { label: "Present", img: "images/fate_present.jpg" },
-    { label: "Broken", img: "images/fate_broken.jpg" },
-    { label: "Absent", img: "images/fate_absent.jpg" }
-  ]);
-  step = 1;
-}
-
-function askHeartLine() {
-  botReply("💖 Select your *Heart Line*:");
-  showOptions([
-    { label: "Pointing Index Finger", img: "images/heart_index.jpg" },
-    { label: "Pointing Middle Finger", img: "images/heart_middle.jpg" },
-    { label: "Pointing Both", img: "images/heart_both.jpg" }
-  ]);
-  step = 2;
-}
-
-function askLifeLine() {
-  botReply("💫 Select your *Life Line*:");
-  showOptions([
-    { label: "Long", img: "images/life_long.jpg" },
-    { label: "Short", img: "images/life_short.jpg" },
-    { label: "Broken", img: "images/life_broken.jpg" }
-  ]);
-  step = 3;
-}
-
-function askMindLine() {
-  botReply("🧠 Select your *Mind Line*:");
-  showOptions([
-    { label: "Straight", img: "images/mind_straight.jpg" },
-    { label: "Short", img: "images/mind_short.jpg" },
-    { label: "Curved", img: "images/mind_curve.jpg" }
-  ]);
-  step = 4;
-}
-
-function askMarriageLine() {
-  botReply("💒 Select your *Marriage Line* position:");
-  showOptions([
-    { label: "Bottom", img: "images/marriage_bottom.jpg" },
-    { label: "Middle", img: "images/marriage_middle.jpg" },
-    { label: "Top", img: "images/marriage_top.jpg" }
-  ]);
-  step = 5;
-}
-
-function askSigns() {
-  botReply("✨ Do you see any of these signs?");
-  showOptions([
-    { label: "Cross between Heart & Mind Line", img: "images/sign_cross.jpg" },
-    { label: "Parallel Line with Life Line", img: "images/sign_parallel.jpg" },
-    { label: "Line from left to Fate Line", img: "images/sign_abroad.jpg" },
-    { label: "Second Heart Line Curve", img: "images/sign_secondHeart.jpg" }
-  ], true);
-  step = 6;
-}
-
-function proceed(selection) {
-  switch (step) {
-    case 1:
-      userSelections.fateLine = selection;
-      askHeartLine();
-      break;
-    case 2:
-      userSelections.heartLine = selection;
-      askLifeLine();
-      break;
-    case 3:
-      userSelections.lifeLine = selection;
-      askMindLine();
-      break;
-    case 4:
-      userSelections.mindLine = selection;
-      askMarriageLine();
-      break;
-    case 5:
-      userSelections.marriageLine = selection;
-      askSigns();
-      break;
-    case 6:
-      userSelections.signs = selection;
-      showFinalPrediction();
-      break;
+function handleAnswer(answer) {
+  const current = stage - 4;
+  if (stage >= 4 && stage < 9) {
+    userData.palm[palmQuestions[current].key] = answer;
+    stage++;
+    nextStage();
+  } else if (stage >= 9 && stage < 13) {
+    userData.signs[signQuestions[stage - 9].key] = answer === "Yes";
+    stage++;
+    nextStage();
   }
 }
 
-function showFinalPrediction() {
-  const { fateLine, heartLine, lifeLine, mindLine, marriageLine, signs } = userSelections;
-  const parts = [];
+function handleInputSubmit() {
+  const val = userInput.value.trim();
+  if (!val) return;
+  appendMessage(val, "user");
 
-  // Fate Line
-  if (fateLine === "Present") parts.push("you are naturally aligned for success in your endeavors");
-  else if (fateLine === "Broken") parts.push("your journey may require adaptability and a change in strategy");
-  else if (fateLine === "Absent") parts.push("your path depends purely on persistence and hard work");
-
-  // Heart Line
-  if (heartLine === "Pointing Index Finger") parts.push("you have a sensitive heart that may lead to emotional vulnerability");
-  else if (heartLine === "Pointing Middle Finger") parts.push("you are an opportunist, doing whatever it takes to achieve your desires");
-  else if (heartLine === "Pointing Both") parts.push("you are deeply intellectual and emotional, especially devoted to those you love");
-
-  // Life Line
-  if (lifeLine === "Long") parts.push("you have a strong constitution and a long life expectancy");
-  else if (lifeLine === "Short") parts.push("you may face health concerns, so self-care is important");
-  else if (lifeLine === "Broken") parts.push("your life’s path has experienced major shifts and transitions");
-
-  // Mind Line
-  if (mindLine === "Straight") parts.push("you are sharp and focused, ideal for academic or logical fields");
-  else if (mindLine === "Short") parts.push("you live in the moment and prefer action over overthinking");
-  else if (mindLine === "Curved") parts.push("your creativity and imagination are gifts that can lead to artistic success");
-
-  // Marriage Line
-  if (marriageLine === "Bottom") parts.push("you are likely to marry early in life");
-  else if (marriageLine === "Middle") parts.push("your marriage will likely happen around the age of 28–30");
-  else if (marriageLine === "Top") parts.push("marriage may be delayed, but will come at the right time");
-
-  // Signs
-  if (signs.includes("Cross between Heart & Mind Line")) parts.push("you are destined for financial success");
-  if (signs.includes("Parallel Line with Life Line")) parts.push("you have divine protection in life’s challenges");
-  if (signs.includes("Line from left to Fate Line")) parts.push("you have strong chances of settling abroad");
-  if (signs.includes("Second Heart Line Curve")) parts.push("your emotions run deep and you are born to love passionately");
-
-  const finalMessage = `🔮 Based on your palm reading, ${parts.join(", ")}. ✨ Trust in yourself and follow your destiny — the stars are with you!`;
-
-  setTimeout(() => {
-    botReply(finalMessage);
-    setTimeout(() => {
-      botReply("🤖 Thank you for using AstroBot. © 2025 AstroBot by Antick Bhattacharjee 🌟");
-    }, 1500);
-  }, 1000);
+  switch (stage) {
+    case 0: userData.name = val; break;
+    case 1: userData.dob = val; userData.zodiac = getZodiacSign(val); break;
+    case 2: userData.birthTime = val; break;
+    case 3: userData.address = val; break;
+  }
+  userInput.value = "";
+  userInput.disabled = true;
+  stage++;
+  nextStage();
 }
 
-window.onload = startBot;
+function nextStage() {
+  progressFill.style.width = `${(stage / 13) * 100}%`;
+
+  if (stage < 4) {
+    const prompts = [
+      "What is your name?",
+      "Enter your date of birth (dd-mm-yyyy):",
+      "Enter your birth time:",
+      "Enter your address:"
+    ];
+    askInputField(prompts[stage]);
+  } else if (stage < 9) {
+    const i = stage - 4;
+    appendMessage(palmQuestions[i].question);
+    appendOptions(palmQuestions[i].options, palmQuestions[i].images);
+  } else if (stage < 13) {
+    const i = stage - 9;
+    appendMessage(signQuestions[i].question);
+    appendOptions(["Yes", "No"], [signQuestions[i].image, "images/sign_none.jpg"]);
+  } else {
+    showPrediction();
+  }
+}
+
+function showPrediction() {
+  appendMessage("Analyzing your data... ✨");
+  setTimeout(() => {
+    appendMessage(generatePrediction());
+  }, 1200);
+}
+
+function generatePrediction() {
+  const p = userData.palm;
+  const s = userData.signs;
+  const z = userData.zodiac;
+  const results = [];
+
+  if (z) {
+    results.push(`\n🔮 Your Zodiac Sign is ${z.symbol} ${z.sign}\n`);
+    results.push(`Your Lucky Numbers: ${z.numbers.join(", ")}\n`);
+    results.push(`Cosmic Message: ${z.prediction}\n`);
+  }
+
+  if (p.fateLine === "Present") results.push("You will succeed in whatever you target.\n");
+  else if (p.fateLine === "Broken") results.push("You should change your path and strategy for success.\n");
+  else results.push("You must rely entirely on hard work.\n");
+
+  if (p.heartLine === "Index Finger") results.push("You are sensitive and might get betrayed.\n");
+  else if (p.heartLine === "Middle Finger") results.push("You are an opportunist and driven.\n");
+  else results.push("You are intelligent and deeply emotional for your loved ones.\n");
+
+  if (p.lifeLine === "Long") results.push("You have a healthy and long life span.\n");
+  else if (p.lifeLine === "Short") results.push("You may face health issues — take care.\n");
+  else results.push("Your life has taken a new path — stay focused now.\n");
+
+  if (p.mindLine === "Straight") results.push("You have great memory and should pursue higher studies.\n");
+  else if (p.mindLine === "Short") results.push("You forgive easily but must work harder.\n");
+  else results.push("You are highly talented with artistic potential.\n");
+
+  if (p.marriageLine === "Bottom") results.push("You may marry very early.\n");
+  else if (p.marriageLine === "Middle") results.push("You’ll likely marry between 28-30.\n");
+  else results.push("You may marry later in life.\n");
+
+  if (s.crossSign) results.push("You have potential for high income.\n");
+  if (s.parallelLifeLine) results.push("You are blessed with divine protection.\n");
+  if (s.abroadMark) results.push("You have chances to settle abroad.\n");
+  if (s.secondHeartLine) results.push("You are extremely emotional and born to love.\n");
+
+  
+
+  return `
+Welcome, ${userData.name}!
+
+Based on your palm lines and zodiac alignment, here is your personalized reading:
+
+${results.map(r => `• ${r}`).join("\n")}
+
+Thank you for trusting the stars and your palms.
+Stay curious, stay cosmic.
+`;
+
+}
+
+sendBtn.addEventListener("click", handleInputSubmit);
+userInput.addEventListener("input", () => {
+  sendBtn.disabled = userInput.value.trim() === "";
+});
+
+nextStage();

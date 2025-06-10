@@ -6,28 +6,91 @@
   <title>AstroBot - Palm Reading Chatbot</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="icon" href="astrobot-icon.png" />
+  <style>
+    .chat-message {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: slideIn 0.4s ease-out forwards;
+    }
+
+    @keyframes slideIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .chat-message:nth-child(1) { animation-delay: 0.1s; }
+    .chat-message:nth-child(2) { animation-delay: 0.2s; }
+    .chat-message:nth-child(3) { animation-delay: 0.3s; }
+    /* You can add more delays or use JavaScript for dynamic timing */
+  </style>
 </head>
 <body>
-
-  <div id="chat-container">
-
-    <!-- Bot Name and Logo -->
-    <div id="bot-header">
-      <img src="images/Ab.png" alt="AstroBot Logo" />
-      <h2>AstroBot</h2>
-    </div>
-
-    <!-- Chat display area -->
-    <div id="chat-area" role="log" aria-live="polite" aria-atomic="false" tabindex="0"></div>
-
-    <!-- Input options area -->
-    <div id="input-area"></div>
-
-    <!-- Copyright footer -->
-    <footer>&copy; 2025 Antick Bhattacharjee. All rights reserved.</footer>
-
+  <!-- Space Background Layer -->
+  <div class="space-bg">
+    <div class="stars"></div>
   </div>
 
+  <div id="chat-container" role="main" aria-label="Astrology palm reading chatbot">
+    
+    <!-- Bot Header -->
+    <header id="bot-header">
+      <img src="images/Ab.png" alt="AstroBot Logo" width="50" height="50" />
+      <h2>AstroBot</h2>
+    </header>
+
+    <!-- Progress Bar -->
+    <div id="progress-bar" aria-label="Progress">
+      <div id="progress-fill"></div>
+    </div>
+
+    <!-- Chat Display -->
+    <section id="chat-area" role="log" aria-live="polite" aria-relevant="additions">
+      <!-- Messages will be dynamically injected here -->
+    </section>
+
+    <!-- Dynamic Input Area -->
+    <form id="input-area" aria-label="Chat input area" onsubmit="return false;">
+      <div id="input-controls">
+        <input type="text" id="user-input" placeholder="Type a message..." autocomplete="off" />
+        <button id="send-btn" disabled>➤</button>
+      </div>
+    </form>
+
+    <!-- Footer -->
+    <footer>&copy; 2025 Antick Bhattacharjee. All rights reserved.</footer>
+  </div>
   <script src="script.js"></script>
+  <script>
+    const input = document.getElementById("user-input");
+    const sendBtn = document.getElementById("send-btn");
+    const chatArea = document.getElementById("chat-area");
+
+    input.addEventListener("input", () => {
+      sendBtn.disabled = input.value.trim() === "";
+    });
+
+    sendBtn.addEventListener("click", () => {
+      const msg = input.value.trim();
+      if (!msg) return;
+
+      appendMessage(msg, "user-msg");
+      input.value = "";
+      sendBtn.disabled = true;
+
+      setTimeout(() => {
+        appendMessage("Processing your palm reading...", "bot-msg");
+      }, 800);
+    });
+
+    function appendMessage(text, className) {
+      const msgDiv = document.createElement("div");
+      msgDiv.className = `chat-message ${className}`;
+      msgDiv.textContent = text;
+      chatArea.appendChild(msgDiv);
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+  </script>
 </body>
 </html>
