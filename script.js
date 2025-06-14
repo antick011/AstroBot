@@ -249,7 +249,7 @@ function getPalmPredictions(answers) {
     },
     mind: {
       straight: "Your memory will help you excel in academics or career. Study and achieve.",
-      curved: "An artistic opportunity will arrive. Express yourself and you’ll stand out.",
+      curve: "An artistic opportunity will arrive. Express yourself and you’ll stand out.",
       short: "Hard work will be required soon — don't rely on shortcuts."
     },
     marriage: {
