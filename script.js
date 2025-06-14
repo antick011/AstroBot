@@ -9,6 +9,7 @@ const questions = [
   { q: "May I know your name?", type: "text", key: "name" },
   { q: "What is your date of birth?", type: "date", key: "dob" },
   { q: "What is your birth time?", type: "time", key: "birthTime" },
+  { q: "May I know your birth place?", type: "text", key: " " },
   {
     q: "What type of Fate Line do you have?",
     type: "image",
